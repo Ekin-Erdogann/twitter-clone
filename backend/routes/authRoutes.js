@@ -1,7 +1,9 @@
 import express from 'express';
-import { signup ,login,logout} from '../controllers/authController.js';
-
+import { signup ,login,logout, getMe} from '../controllers/authController.js';
+import { protectedRoute } from '../middleware/protectedRoute.js';
 const router = express.Router();
+
+router.get('/me',protectedRoute, getMe); // we use the protectedRoute middleware to decode the cookies to see if the user is authenticated or not
 
 router.post('/signup', signup);
 
