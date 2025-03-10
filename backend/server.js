@@ -2,6 +2,7 @@ import express from 'express';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import dotenv from 'dotenv';
 import {v2 as cloudinary}from 'cloudinary';
 import connectMongoDb from './db/connectMongoDb.js';
@@ -20,6 +21,7 @@ app.use(cookieParser());// we use this to parse the cookies
 app.use("/api/auth",authRoutes) // if we visit /api/auth, it will redirect to authRoutes
 app.use("/api/users",userRoutes) // if we visit /api/users, it will redirect to userRoutes
 app.use("/api/posts",postRoutes) // if we visit /api/posts, it will redirect to postRoutes
+app.use("/api/notifications",notificationRoutes) 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
