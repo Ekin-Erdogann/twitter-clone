@@ -5,19 +5,41 @@ import { FaRegBookmark } from "react-icons/fa6";
 import { FaTrash } from "react-icons/fa";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-const Post = ({ post }) => {
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
+import { useQueryClient } from "@tanstack/react-query";
+const Post = ({ post }) => {		
 	const [comment, setComment] = useState("");
 	const postOwner = post.user;
 	const isLiked = false;
-
-	const isMyPost = true;
-
+	const queryClient = useQueryClient();
+const {data: currentUser} = useQuery({queryKey: ["currentUser"]})
+	const isMyPost = currentUser?._id === post.user._id;
 	const formattedDate = "1h";
-
+const {mutate:deletePost ,ispending: isDeleting} = useQuery({
+	queryKey: ["deletePost"],
+	queryFn: async () => {
+		try {
+			const response = await fetch(`api/posts/${post._id}`, {
+				method: "DELETE",
+			});
+			const data = await response.json();
+			if (!response.ok) {
+				throw new Error(data.error || "Failed to delete post");
+			}
+			return data;
+		} catch (error) {
+			throw new Error(error);
+		}
+	},onSuccess:()=>{toast.success("Post deleted successfully")
+queryClient.invalidateQueries({queryKey: ["posts"]}) // Invalidate the posts query to refetch the updated list of posts)
+	},onError:(error)=>{toast.error(error.message || "Failed to delete post")}});	
 	const isCommenting = false;
 
-	const handleDeletePost = () => {};
+	const handleDeletePost = () => {
+		deletePost();
+	};
 
 	const handlePostComment = (e) => {
 		e.preventDefault();
@@ -45,7 +67,8 @@ const Post = ({ post }) => {
 						</span>
 						{isMyPost && (
 							<span className='flex justify-end flex-1'>
-								<FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />
+								{!isDeleting && <FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />}
+							{isDeleting && <LoadingSpinner size="sm"/>}
 							</span>
 						)}
 					</div>
