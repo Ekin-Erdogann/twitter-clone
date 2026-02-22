@@ -15,7 +15,7 @@ cloudinary.config({
     api_secret:process.env.CLOUDINARY_API_SECRET,
 })//to configure cloudinary
 
-app.use(express.json());// we use this to parse the body of the request
+app.use(express.json({limit: "5mb"}));// we use this to parse the body of the request but the limit shouldnt be too large to prevent DoS attacks, we set it to 5mb because we will be uploading images and the average size of an image is around 3mb, so 5mb should be enough.
 app.use(express.urlencoded({ extended: true }));// we use this to parse the body of the request in x-www-form-urlencoded format
 app.use(cookieParser());// we use this to parse the cookies
 app.use("/api/auth",authRoutes) // if we visit /api/auth, it will redirect to authRoutes
