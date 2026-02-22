@@ -60,8 +60,7 @@ try {
             to:userToFollow._id,
             type:"follow"
         });
-        await newNotification.save();// we save the new notification to the database
-        //todo: return the id of the user as a response
+        await newNotification.save();// we save the new notification to the database 
         res.status(200).json({userId,message:"User unfollowed successfully"});
 
     }else{
@@ -74,8 +73,7 @@ try {
             to:userToFollow._id,
             type:"follow"
         });
-        await newNotification.save();// we save the new notification to the database
-        //todo: return the id of the user as a response
+        await newNotification.save();// we save the new notification to the database 
         res.status(200).json({userId,message:"User followed successfully"});
     }
 } catch (error) {
