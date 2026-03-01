@@ -43,7 +43,7 @@ function App() {
 				<Route path='/signup' element={!currentUser ? <SignUpPage /> : <HomePage />} />
 				<Route path='/login' element={!currentUser ? <LoginPage /> : <HomePage />} />
 				<Route path='/notifications' element={currentUser ? <NotificationPage /> : <LoginPage />} />
-				<Route path='/profile/:user' element={currentUser ? <ProfilePage /> : <LoginPage />} />
+				<Route path='/profile/:username' element={currentUser ? <ProfilePage /> : <LoginPage />} />
 			</Routes>
 			{currentUser && <RightPanel />}
 			<Toaster/>
