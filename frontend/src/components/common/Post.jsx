@@ -5,14 +5,14 @@ import { FaRegBookmark } from "react-icons/fa6";
 import { FaTrash } from "react-icons/fa";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import LoadingSpinner from "./LoadingSpinner";
 import { useQueryClient } from "@tanstack/react-query";
 const Post = ({ post }) => {		
 	const [comment, setComment] = useState("");
 	const postOwner = post.user;
-	const isLiked = false;
+	const isLiked = post.likes.includes(currentUser?._id);
 	const queryClient = useQueryClient();
 const {data: currentUser} = useQuery({queryKey: ["currentUser"]})
 	const isMyPost = currentUser?._id === post.user._id;
@@ -37,6 +37,36 @@ queryClient.invalidateQueries({queryKey: ["posts"]}) // Invalidate the posts que
 	},onError:(error)=>{toast.error(error.message || "Failed to delete post")}});	
 	const isCommenting = false;
 
+	const {mutate: likePost, ispending:isLiking} = useMutation({
+	mutationFn: async () => {
+		try {
+			const response = await fetch(`/api/posts/like/${post._id}`, {
+				method: "POST",
+			});
+			const data = await response.json();
+			if (!response.ok) {
+				throw new Error(data.error || "Failed to like post");
+			}
+			return data;
+		} catch (error) {
+			throw new Error(error);
+		}
+	},onSuccess:(updatedLikes)=>{
+		toast.success("Post liked successfully")
+		// Update the local cache of posts to reflect the new like status ratheer than invalidate the whole posts query and refetch all posts. This way we can provide a more responsive user experience.
+	    queryClient.setQueryData({queryKey: ["posts"]}, (oldPosts) => {
+			return oldPosts.map((p) => {
+				if (p._id === post._id) {
+					return { ...p, likes: updatedLikes };
+				}
+				return p;
+			});
+		});
+
+	},onError:(error)=>{
+		toast.error(error.message || "Failed to like post")
+	}});
+
 	const handleDeletePost = () => {
 		deletePost();
 	};
@@ -45,7 +75,10 @@ queryClient.invalidateQueries({queryKey: ["posts"]}) // Invalidate the posts que
 		e.preventDefault();
 	};
 
-	const handleLikePost = () => {};
+	const handleLikePost = () => {
+		if(isLiking) return;
+		likePost();
+	};
 
 	return (
 		<>
@@ -136,7 +169,7 @@ queryClient.invalidateQueries({queryKey: ["posts"]}) // Invalidate the posts que
 										/>
 										<button className='btn btn-primary rounded-full btn-sm text-white px-4'>
 											{isCommenting ? (
-												<span className='loading loading-spinner loading-md'></span>
+												<LoadingSpinner size="md"/>
 											) : (
 												"Post"
 											)}
@@ -152,14 +185,15 @@ queryClient.invalidateQueries({queryKey: ["posts"]}) // Invalidate the posts que
 								<span className='text-sm text-slate-500 group-hover:text-green-500'>0</span>
 							</div>
 							<div className='flex gap-1 items-center group cursor-pointer' onClick={handleLikePost}>
-								{!isLiked && (
+								{!isLiked && !isLiking && (
 									<FaRegHeart className='w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500' />
 								)}
-								{isLiked && <FaRegHeart className='w-4 h-4 cursor-pointer text-pink-500 ' />}
+								{isLiked && !isLiking && (<FaRegHeart className='w-4 h-4 cursor-pointer text-pink-500 ' />)}
+								{isLiking && <LoadingSpinner size="sm"/>}
 
 								<span
-									className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-										isLiked ? "text-pink-500" : ""
+									className={`text-sm  group-hover:text-pink-500 ${
+										isLiked ? "text-pink-500" : "text-slate-500"
 									}`}
 								>
 									{post.likes.length}
