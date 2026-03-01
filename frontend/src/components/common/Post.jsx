@@ -9,6 +9,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import LoadingSpinner from "./LoadingSpinner";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatPostDate } from "../../utils/formatDate";
 const Post = ({ post }) => {		
 	const [comment, setComment] = useState("");
 	const postOwner = post.user;
@@ -16,7 +17,7 @@ const Post = ({ post }) => {
 	const queryClient = useQueryClient();
 const {data: currentUser} = useQuery({queryKey: ["currentUser"]})
 	const isMyPost = currentUser?._id === post.user._id;
-	const formattedDate = "1h";
+	const formattedDate = formatPostDate(post.createdAt);
 const {mutate:deletePost ,ispending: isDeleting} = useQuery({
 	queryKey: ["deletePost"],
 	queryFn: async () => {
@@ -67,12 +68,41 @@ queryClient.invalidateQueries({queryKey: ["posts"]}) // Invalidate the posts que
 		toast.error(error.message || "Failed to like post")
 	}});
 
+	const {mutate: postComment, ispending:isPostingComment} = useMutation({
+	mutationFn: async () => {
+		try {
+			const response = await fetch(`/api/posts/comment/${post._id}`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ text: comment
+				 }),
+			});
+			const data = await response.json();
+			if (!response.ok) {
+				throw new Error(data.error || "Failed to post comment");
+			}
+			return data;
+		} catch (error) {
+			throw new Error(error);
+		}
+	},onSuccess:()=>{
+		toast.success("Comment posted successfully")
+		queryClient.invalidateQueries({queryKey: ["posts"]}) // Invalidate the posts query to refetch the updated list of posts)
+		setComment("");
+	},onError:(error)=>{
+		toast.error(error.message || "Failed to post comment")
+	}});
+
 	const handleDeletePost = () => {
 		deletePost();
 	};
 
 	const handlePostComment = (e) => {
 		e.preventDefault();
+		if(isPostingComment) return;
+		postComment();
 	};
 
 	const handleLikePost = () => {
